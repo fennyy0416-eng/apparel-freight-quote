@@ -1,25 +1,30 @@
 # 运费助手 · Apparel Freight Quote
 
-美国服装海运报价网页原型，包含电商及传统物流两条报价流程。
+美国服装海运报价演示，电商物流和传统物流独立核算。
 
-## 本地运行
+## 开发与运行
 
-无需安装依赖，在仓库根目录运行：
+无第三方依赖。需要支持 node:test 的 Node.js（建议 Node 22 或更新版本）。
 
 ```sh
-python3 -m http.server 8000 --directory dist
+npm test
+npm run build
+npm start
 ```
 
-打开 http://localhost:8000 。请通过 HTTP 服务运行，以加载 tariffs.json。
+打开 http://localhost:8000 。npm start 使用 Python 3 提供静态 HTTP 服务。
 
-## 文件
+- `src/` 是唯一源码目录：在这里修改，不直接编辑 `dist/`。
+- `scripts/build.cjs` 将源码导出到 `dist/`，无打包或压缩。
+- `dist/` 是生成的发布文件，供 Sites 或其他静态托管服务使用。
+- `tests/quote.test.cjs` 使用 Node 内置测试框架。
 
-- dist/index.html、style.css、app.js：界面和交互
-- dist/engine.js、quote-rules.js：报价计算与规则
-- dist/tax-engine.js、tariffs.js、tariffs.json：税费逻辑和税则数据快照
+## 费率与计算
 
-## 当前范围
+`src/engine.js` 每条路由独立定义 `kgRate`、`lclPerCbm`、`fclMultiplier` 和时效。路由顺序不参与定价。中部路线继承西岸海运费率，保留原来的公斤价和时效增量。
 
-此版本为报价演示原型。运价与税则数据需要业务审核和更新，不代表实时承运商报价或最终报关税额。Ocean Tracking、卡车报价、正式订舱及账号后端尚未接入。浏览器本地保存的数据不会随源代码备份。
+传统物流的 `total` 为物流及已知进口费用合计；`landed` 在其基础上加 FOB 货值；`per` 为 landed / 件数。未知税项保留 null、显示待确认，complete=false。
 
-本次从 Sites 源码提交 cf3e446ebb951da29af5852f388fda5297ad7df0 导出。GitHub 保存不会自动同步后续 Sites 修改。
+费率维持旧版演示行为，并非正式报价。真实 LCL 单价、整柜系数及渠道公斤价须由 Stefanie/业务负责人逐条确认。税则为日期快照，测试仅验证当前快照的计算逻辑，不证明税率现时有效。特殊税项及申报条件须另行复核。
+
+Ocean Tracking、实时卡车报价、正式订舱及账号后端尚未接入。浏览器本地保存的报价不随源码同步。GitHub 与 Sites 仍需在发布时同步，不是自动双向同步。
