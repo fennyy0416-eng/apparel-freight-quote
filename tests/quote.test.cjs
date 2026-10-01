@@ -82,3 +82,19 @@ test('tariff rate parser distinguishes unknown rates and true duty free',()=>{
  const data={records:[{code:'6109.10.00',description:'Cotton knit shirts'}]};
  assert.equal(tariffs.search(data,'610910').length,1);assert.equal(tariffs.search(data,'cotton shirts').length,1);
 });
+
+test('LA–NY trucking uses owner cost plus 10%, without charging direct NY or other lanes',()=>{
+ const shipment={...d,volume:25,pieces:24000};
+ const plans=engine.traditional(shipment,x);
+ for(const p of plans.filter(p=>p.id!=='ny')){
+  assert.equal(p.deliveryQuote.units,13);assert.equal(p.deliveryQuote.unitRate,385);
+  assert.equal(p.deliveryQuote.total,5005);close(p.deliveryQuote.total/24000,5005/24000);
+ }
+ assert.equal(plans[0].deliveryQuote.unitRate,200);
+ for(const volume of [60,120]){
+  const p=engine.traditional({...shipment,volume},{...x,load:'AUTO'})[1];
+  assert.equal(p.deliveryQuote.unitRate,9570);assert.equal(p.deliveryQuote.total,9570*volume/60);
+ }
+ for(const zip of ['92618','60601','33101'])assert.equal(engine.traditional({...shipment,zip},x)[1].deliveryQuote.lane,null);
+ assert.equal(engine.traditional(shipment,{...x,load:'40HQ',delivery:'direct'})[1].deliveryQuote.lane,null);
+});
